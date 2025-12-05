@@ -276,6 +276,53 @@ namespace OLED12864_I2C {
         _DRAW = _sav
         draw(_DRAW)
     }
+	
+    /**
+     * Draw Line
+     * @param x0 x0. eg: 0
+     * @param y0 y0. eg: 0
+     * @param x1 x1. eg: 20
+     * @param y1 y1. eg: 20
+	 * @param color is the color of the line, eg: 1
+     */
+    //% blockId=OLED12864_I2C_drawLine
+    //% block="draw line from:|x: %x0 y: %y0 to| x: %x1 y: %y1|color %color"
+    //% inlineInputMode=inline
+    export function drawLine(x0: number, y0: number, x1: number, y1: number, color: number = 1) {
+        _DRAW = 0
+		
+		let kx: number, ky: number, c: number, i: number, dx: number, dy: number;
+
+        dx = Math.abs(x1 - x0);
+        dy = Math.abs(y1 - y0);
+        kx = x0 < x1 ? 1 : -1;
+        ky = y0 < y1 ? 1 : -1;
+
+        if (dx >= dy) {
+            c = dx;
+            for (i = 0; i < dx; i++, x0 += kx) {
+				pixel(x0, y0, color);
+                c -= dy;
+                if (c <= 0) {
+                    y0 += ky;
+                    c += dx;
+                }
+            }
+        } else {
+            c = dy;
+            for (i = 0; i < dy; i++, y0 += ky) {
+                pixel(x0, y0, color);
+                c -= dx;
+                if (c <= 0) {
+                    x0 += kx;
+                    c += dy;
+                }
+            }
+        }
+		
+        _DRAW = 1
+        draw(1)
+    }
 
     /**
      * draw a rectangle
@@ -350,7 +397,7 @@ namespace OLED12864_I2C {
    * @param color is the color of the circle, eg: 1
    */
   //% blockId="OLED12864_I2C_OUTLINEDCIRCLE" block="draw outlined circle at x %x|y %y|radius %r|color %color"
-  //% weight=70 blockGap=8
+  //% inlineInputMode=inline
   export function outlinedCircle(x: number, y: number, r: number, color: number = 1) {
 	  _DRAW = 0
       const step = 1 / r;
@@ -370,6 +417,7 @@ namespace OLED12864_I2C {
    * @param color is the color of the circle, eg: 1
    */
   //% blockId="OLED12864_I2C_FILLEDCIRCLE" block="draw filled circle at x %x|y %y|radius %r|color %color"
+  //% inlineInputMode=inline
   export function filledCircle(x: number, y: number, r: number, color: number = 1) {
 	  _DRAW = 0
       for (let j = 0; j <= r; j++) {
@@ -384,15 +432,23 @@ namespace OLED12864_I2C {
 	  draw(1)
   }
   
-  //% blockId="OLED12864_I2C_DRAWBYTES" block="draw bytes at x %x|y %y|bytes %bytes|width %width|color %color"
+   /**
+   * draw bytes
+   * @param x is the x coordinate of the center, eg: 0
+   * @param y is the y coordinate of the center, eg: 0
+   * @param bytes is the pixels byte array
+   * @param width is the pixels width, eg: 8
+   * @param color is the color of the circle, eg: 1
+   */
+  //% blockId="OLED12864_I2C_DRAWBYTES" block="draw bytes at x %x y %y|bytes %bytes|width %width color %color"
   export function drawBytes(x: number, y: number, bytes: number[], width: number = 8, color: number = 1) {
 	  _DRAW = 0
-	  const height = bytes.length*8/width;
+	  let bit=0
 	  for (let i = 0; i < bytes.length; i++) {
-        //bytes[i];
-		let xPos = x + 0;
-	    let yPos = y + 0;
-	    pixel(xPos, yPos, color);
+    	  for (let j = i*8; j < (i+1)*8; j++) {
+			bit=(bytes[i]>>(8-1-(j-i*8)))&0x1;
+			pixel(x+j%width, y+j/width, bit==1?color:color^0x1);
+	      }
 	  }
   	  _DRAW = 1
 	  draw(1)
@@ -403,7 +459,7 @@ namespace OLED12864_I2C {
 	 * @param addr is i2c addr, eg: 61
      */
     //% blockId="OLED12864_I2C_init" block="init OLED with addr %addr"
-    //% weight=10 blockGap=8
+    //% weight=90 blockGap=8
     export function init(addr: number = 61) {
         _I2CAddr = addr;
         cmd1(0xAE)       // SSD1306_DISPLAYOFF
