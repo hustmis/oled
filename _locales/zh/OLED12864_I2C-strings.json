@@ -3,6 +3,7 @@
     "OLED12864_I2C.DISPLAY_ONOFF.DISPLAY_OFF|block": "关",
     "OLED12864_I2C.pixel|block": "画点在 x %x|y %y|颜色 %color",
     "OLED12864_I2C.String|block": "显示文字 %s|在列 %x|行 %y|颜色 %color",
+	"OLED12864_I2C.StringMirrored|block": "显示镜像文字 %s|在列 %x|行 %y|颜色 %color",
     "OLED12864_I2C.Number|block": "显示数字 %num|在列 %x|行 %y|颜色 %color",
     "OLED12864_I2C.printString|block": "打印 %s|颜色 %color|新行 %newline",
     "OLED12864_I2C.printNumber|block": "打印数字 %num|颜色 %color|新行 %newline",
@@ -12,5 +13,9 @@
     "OLED12864_I2C.invert|block": "反显模式 %d",
     "OLED12864_I2C.clear|block": "清除屏幕",
     "OLED12864_I2C.display|block": "显示 %d",
-    "OLED12864_I2C.init|block": "初始化"
+	"OLED12864_I2C.zoom|block": "放大 %d",
+	"OLED12864_I2C.outlinedCircle|block": "绘制圆形在 x %x|y %y|半径 %r|颜色 %color",
+    "OLED12864_I2C.filledCircle|block": "绘制实心圆形在 x %x|y %y|半径 %r|颜色 %color",
+	"OLED12864_I2C.drawBytes|block": "绘制数据在 x %x|y %y|数据 %bytes|宽度 %width|颜色 %color",
+    "OLED12864_I2C.init|block": "初始化 %addr"
 }
