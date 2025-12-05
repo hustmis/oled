@@ -158,9 +158,15 @@ namespace OLED12864_I2C {
             let c = s.charAt(s.length - 1 - n)
             let p = (Math.min(127, Math.max(c.charCodeAt(0), 32)) - 32) * 5
             let ind = col + row * 128 + 1
-
-            for (let i = 0; i < 5/2+1; i++) {
-                let mirrored = Font_5x7[p + (5-1-i)]
+			
+            for (let i = 0; i < 5; i++) {
+                let original = Font_5x7[p + (5-1-i)]
+                let mirrored = 0
+                for (let b = 0; b < 8; b++) {
+                    if (original & (1 << b)) {
+                        mirrored |= (1 << (7 - b))
+                    }
+                }
                 _screen[ind + i] = (color > 0) ? mirrored : mirrored ^ 0xFF
                 _buf7[i + 1] = _screen[ind + i]
             }
