@@ -159,14 +159,8 @@ namespace OLED12864_I2C {
             let p = (Math.min(127, Math.max(c.charCodeAt(0), 32)) - 32) * 5
             let ind = col + row * 128 + 1
 
-            for (let i = 0; i < 5; i++) {
-                let original = Font_5x7[p + i]
-                let mirrored = 0
-                for (let b = 0; b < 8; b++) {
-                    if (original & (1 << b)) {
-                        mirrored |= (1 << (7 - b))
-                    }
-                }
+            for (let i = 0; i < 5/2+1; i++) {
+                let mirrored = Font_5x7[p + (5-1-i)]
                 _screen[ind + i] = (color > 0) ? mirrored : mirrored ^ 0xFF
                 _buf7[i + 1] = _screen[ind + i]
             }
@@ -287,7 +281,7 @@ namespace OLED12864_I2C {
      */
     //% blockId=OLED12864_I2C_drawLine
     //% block="draw line from:|x: %x0 y: %y0 to| x: %x1 y: %y1|color %color"
-    //% inlineInputMode=inline
+    //% weight=71 blockGap=8 inlineInputMode=inline
     export function drawLine(x0: number, y0: number, x1: number, y1: number, color: number = 1) {
         _DRAW = 0
 		
@@ -398,6 +392,7 @@ namespace OLED12864_I2C {
    */
   //% blockId="OLED12864_I2C_OUTLINEDCIRCLE" block="draw outlined circle at x %x|y %y|radius %r|color %color"
   //% inlineInputMode=inline
+  //% weight=62 blockGap=8
   export function outlinedCircle(x: number, y: number, r: number, color: number = 1) {
 	  _DRAW = 0
       const step = 1 / r;
@@ -418,6 +413,7 @@ namespace OLED12864_I2C {
    */
   //% blockId="OLED12864_I2C_FILLEDCIRCLE" block="draw filled circle at x %x|y %y|radius %r|color %color"
   //% inlineInputMode=inline
+  //% weight=62 blockGap=8
   export function filledCircle(x: number, y: number, r: number, color: number = 1) {
 	  _DRAW = 0
       for (let j = 0; j <= r; j++) {
@@ -441,6 +437,8 @@ namespace OLED12864_I2C {
    * @param color is the color of the circle, eg: 1
    */
   //% blockId="OLED12864_I2C_DRAWBYTES" block="draw bytes at x %x y %y|bytes %bytes|width %width color %color"
+  //% inlineInputMode=inline
+  //% weight=62 blockGap=8
   export function drawBytes(x: number, y: number, bytes: number[], width: number = 8, color: number = 1) {
 	  _DRAW = 0
 	  let bit=0
