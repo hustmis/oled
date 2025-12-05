@@ -21,7 +21,7 @@ namespace OLED12864_I2C {
     const MAX_X = 127
     const MAX_Y = 63
 
-    let _I2CAddr = 60
+    let _I2CAddr = 0
     let _screen = pins.createBuffer(1025)
     let _buf2 = pins.createBuffer(2)
     let _buf3 = pins.createBuffer(3)
@@ -31,6 +31,7 @@ namespace OLED12864_I2C {
     let _DRAW = 1
     let _cx = 0
     let _cy = 0
+	let _ZOOM = 0;
 
     function cmd1(d: number) {
         let n = d % 256;
@@ -54,8 +55,9 @@ namespace OLED12864_I2C {
 
     function set_pos(col: number = 0, page: number = 0) {
         cmd1(0xb0 | page) // page number
-        cmd1(0x00 | (col % 16)) // lower start column address
-        cmd1(0x10 | (col >> 4)) // upper start column address    
+		let c = col * (_ZOOM + 1);
+        cmd1(0x00 | (c % 16)) // lower start column address
+        cmd1(0x10 | (c >> 4)) // upper start column address    
     }
 
     // clear bit
@@ -86,29 +88,44 @@ namespace OLED12864_I2C {
     export function pixel(x: number, y: number, color: number = 1) {
         let page = y >> 3
         let shift_page = y % 8
-        let ind = x + page * 128 + 1
+        let ind = x * (_ZOOM + 1)  + page * 128 + 1
         let b = (color) ? (_screen[ind] | (1 << shift_page)) : clrbit(_screen[ind], shift_page)
         _screen[ind] = b
-        if (_DRAW) {
-            set_pos(x, page)
-            _buf2[0] = 0x40
-            _buf2[1] = b
-            pins.i2cWriteBuffer(_I2CAddr, _buf2)
-        }
+		if (_ZOOM) {
+			_screen[ind + 1] = b;
+		 
+			if (_DRAW) {
+				set_pos(x, page)
+			   _buf3[0] = 0x40;
+			   _buf3[1] = _buf3[2] = b;
+			   pins.i2cWriteBuffer(_I2CAddr, _buf3);
+			}
+		} else {
+			if (_DRAW) {
+				set_pos(x, page)
+				_buf2[0] = 0x40
+				_buf2[1] = b
+				pins.i2cWriteBuffer(_I2CAddr, _buf2)
+			}
+		}
     }
 
     function char(c: string, col: number, row: number, color: number = 1) {
         let p = (Math.min(127, Math.max(c.charCodeAt(0), 32)) - 32) * 5
-        let ind = col + row * 128 + 1
+        let ind = 0
 
         for (let i = 0; i < 5; i++) {
-            _screen[ind + i] = (color > 0) ? Font_5x7[p + i] : Font_5x7[p + i] ^ 0xFF
-            _buf7[i + 1] = _screen[ind + i]
+			ind = col * (_ZOOM + 1) + row * 128 + i * (_ZOOM + 1) + 1
+            _screen[ind] = (color > 0) ? Font_5x7[p + i] : Font_5x7[p + i] ^ 0xFF
+			if (_ZOOM) _screen[ind + 1] = _screen[ind];
+            //_buf7[i + 1] = _screen[ind]
         }
-        _screen[ind + 5] = (color > 0) ? 0 : 0xFF
-        _buf7[6] = _screen[ind + 5]
-        set_pos(col, row)
-        pins.i2cWriteBuffer(_I2CAddr, _buf7)
+        _screen[ind + 1] = (color > 0) ? 0 : 0xFF
+		_screen[ind + 1 * (_ZOOM + 1)] = _screen[ind + 1]
+        //_buf7[6] = _screen[ind + 1]
+        //set_pos(col, row)
+        //pins.i2cWriteBuffer(_I2CAddr, _buf7)
+		draw(1)
     }
 
     /**
@@ -123,11 +140,46 @@ namespace OLED12864_I2C {
     export function String(s: string, col: number, row: number, color: number = 1) {
         for (let n = 0; n < s.length; n++) {
             char(s.charAt(n), col, row, color)
+            col += 6 * (_ZOOM + 1)
+            if (col > (MAX_X - 6 * (_ZOOM + 1))) return
+        }
+    }
+      /**
+     * show mirrored text in OLED
+     */
+    //% blockId="OLED12864_I2C_SHOWSTRING_MIRRORED" block="show mirrored string %s|at col %col|row %row|color %color"
+    //% s.defl="Hello"
+    //% col.max=120 col.min=0 col.defl=0
+    //% row.max=7 row.min=0 row.defl=0
+    //% color.max=1 color.min=0 color.defl=1
+    //% weight=79 blockGap=8 inlineInputMode=inline
+    export function StringMirrored(s: string, col: number, row: number, color: number = 1) {
+        for (let n = 0; n < s.length; n++) {
+            let c = s.charAt(s.length - 1 - n)
+            let p = (Math.min(127, Math.max(c.charCodeAt(0), 32)) - 32) * 5
+            let ind = col + row * 128 + 1
+
+            for (let i = 0; i < 5; i++) {
+                let original = Font_5x7[p + i]
+                let mirrored = 0
+                for (let b = 0; b < 8; b++) {
+                    if (original & (1 << b)) {
+                        mirrored |= (1 << (7 - b))
+                    }
+                }
+                _screen[ind + i] = (color > 0) ? mirrored : mirrored ^ 0xFF
+                _buf7[i + 1] = _screen[ind + i]
+            }
+
+            _screen[ind + 5] = (color > 0) ? 0 : 0xFF
+            _buf7[6] = _screen[ind + 5]
+            set_pos(col, row)
+            pins.i2cWriteBuffer(_I2CAddr, _buf7)
+
             col += 6
             if (col > (MAX_X - 6)) return
         }
     }
-
     /**
      * show a number in OLED
      */
@@ -278,13 +330,82 @@ namespace OLED12864_I2C {
         let d = (on == DISPLAY_ONOFF.DISPLAY_ON) ? 0xAF : 0xAE;
         cmd1(d)
     }
+	
+	  /**
+	   * zoom mode
+	   * @param d true zoom / false normal, eg: true
+	   */
+	  //% blockId="OLED12864_I2C_ZOOM" block="zoom %d"
+	  //% weight=60 blockGap=8
+	  export function zoom(d: boolean = true) {
+		_ZOOM = d ? 1 : 0;
+		cmd2(0xd6, _ZOOM);
+	  }
+	  
+  /**
+   * draw an outlined circle
+   * @param x is the x coordinate of the center, eg: 0
+   * @param y is the y coordinate of the center, eg: 0
+   * @param r is the radius of the circle, eg: 10
+   * @param color is the color of the circle, eg: 1
+   */
+  //% blockId="OLED12864_I2C_OUTLINEDCIRCLE" block="draw outlined circle at x %x|y %y|radius %r|color %color"
+  //% weight=70 blockGap=8
+  export function outlinedCircle(x: number, y: number, r: number, color: number = 1) {
+	  _DRAW = 0
+      const step = 1 / r;
+      for (let theta = 0; theta < 2 * Math.PI; theta += step) {
+          let xPos = x + Math.round(r * Math.cos(theta));
+          let yPos = y + Math.round(r * Math.sin(theta));
+          pixel(xPos, yPos, color);
+      }
+  	  _DRAW = 1
+	  draw(1)
+  }
+  /**
+   * draw a filled circle
+   * @param x is the x coordinate of the center, eg: 0
+   * @param y is the y coordinate of the center, eg: 0
+   * @param r is the radius of the circle, eg: 10
+   * @param color is the color of the circle, eg: 1
+   */
+  //% blockId="OLED12864_I2C_FILLEDCIRCLE" block="draw filled circle at x %x|y %y|radius %r|color %color"
+  export function filledCircle(x: number, y: number, r: number, color: number = 1) {
+	  _DRAW = 0
+      for (let j = 0; j <= r; j++) {
+          const step = 1 / j;
+          for (let theta = 0; theta < 2 * Math.PI; theta += step) {
+              let xPos = x + Math.round(j * Math.cos(theta));
+              let yPos = y + Math.round(j * Math.sin(theta));
+              pixel(xPos, yPos, color);
+          }
+      }
+  	  _DRAW = 1
+	  draw(1)
+  }
+  
+  //% blockId="OLED12864_I2C_DRAWBYTES" block="draw bytes at x %x|y %y|bytes %bytes|width %width|color %color"
+  export function drawBytes(x: number, y: number, bytes: number[], width: number = 8, color: number = 1) {
+	  _DRAW = 0
+	  const height = bytes.length*8/width;
+	  for (let i = 0; i < bytes.length; i++) {
+        //bytes[i];
+		let xPos = x + 0;
+	    let yPos = y + 0;
+	    pixel(xPos, yPos, color);
+	  }
+  	  _DRAW = 1
+	  draw(1)
+  }
 
     /**
      * OLED initialize
+	 * @param addr is i2c addr, eg: 61
      */
-    //% blockId="OLED12864_I2C_init" block="Initial OLED"
+    //% blockId="OLED12864_I2C_init" block="init OLED with addr %addr"
     //% weight=10 blockGap=8
-    export function init() {
+    export function init(addr: number = 61) {
+        _I2CAddr = addr;
         cmd1(0xAE)       // SSD1306_DISPLAYOFF
         cmd1(0xA4)       // SSD1306_DISPLAYALLON_RESUME
         cmd2(0xD5, 0xF0) // SSD1306_SETDISPLAYCLOCKDIV
@@ -307,5 +428,4 @@ namespace OLED12864_I2C {
         clear()
     }
 
-    init();
 }  
