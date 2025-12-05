@@ -160,7 +160,7 @@ namespace OLED12864_I2C {
             let ind = col + row * 128 + 1
 			
             for (let i = 0; i < 5; i++) {
-                let original = Font_5x7[p + (5-1-i)]
+                let original = Font_5x7[p + (i)]
                 let mirrored = 0
                 for (let b = 0; b < 8; b++) {
                     if (original & (1 << b)) {
