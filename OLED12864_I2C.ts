@@ -29,6 +29,7 @@ namespace OLED12864_I2C {
     let _buf7 = pins.createBuffer(7)
     _buf7[0] = 0x40
     let _DRAW = 1
+	let _savDRAW = 1
     let _cx = 0
     let _cy = 0
 	let _ZOOM = 0;
@@ -125,7 +126,7 @@ namespace OLED12864_I2C {
         //_buf7[6] = _screen[ind + 1]
         //set_pos(col, row)
         //pins.i2cWriteBuffer(_I2CAddr, _buf7)
-		draw(1)
+		draw(_DRAW)
     }
 
     /**
@@ -160,13 +161,7 @@ namespace OLED12864_I2C {
             let ind = col + row * 128 + 1
 			
             for (let i = 0; i < 5; i++) {
-                let original = Font_5x7[p + (i)]
-                let mirrored = 0
-                for (let b = 0; b < 8; b++) {
-                    if (original & (1 << b)) {
-                        mirrored |= (1 << (7 - b))
-                    }
-                }
+                let mirrored = Font_5x7[p + (5-1-i)]
                 _screen[ind + i] = (color > 0) ? mirrored : mirrored ^ 0xFF
                 _buf7[i + 1] = _screen[ind + i]
             }
@@ -200,7 +195,7 @@ namespace OLED12864_I2C {
             _cy = 7
             _screen.shift(128)
             _screen[0] = 0x40
-            draw(1)
+            draw(_DRAW)
         }
     }
 
@@ -247,13 +242,13 @@ namespace OLED12864_I2C {
     //% color.max=1 color.min=0 color.defl=1
     //% weight=71 blockGap=8 inlineInputMode=inline
     export function hline(x: number, y: number, len: number, color: number = 1) {
-        let _sav = _DRAW
+        _savDRAW = _DRAW
         if ((y < MIN_Y) || (y > MAX_Y)) return
         _DRAW = 0
         for (let i = x; i < (x + len); i++)
             if ((i >= MIN_X) && (i <= MAX_X))
                 pixel(i, y, color)
-        _DRAW = _sav
+        _DRAW = _savDRAW
         draw(_DRAW)
     }
 
@@ -267,13 +262,13 @@ namespace OLED12864_I2C {
     //% color.max=1 color.min=0 color.defl=1
     //% weight=71 blockGap=8 inlineInputMode=inline
     export function vline(x: number, y: number, len: number, color: number = 1) {
-        let _sav = _DRAW
+        _savDRAW = _DRAW
         _DRAW = 0
         if ((x < MIN_X) || (x > MAX_X)) return
         for (let i = y; i < (y + len); i++)
             if ((i >= MIN_Y) && (i <= MAX_Y))
                 pixel(x, i, color)
-        _DRAW = _sav
+        _DRAW = _savDRAW
         draw(_DRAW)
     }
 	
@@ -289,6 +284,7 @@ namespace OLED12864_I2C {
     //% block="draw line from:|x: %x0 y: %y0 to| x: %x1 y: %y1|color %color"
     //% weight=71 blockGap=8 inlineInputMode=inline
     export function drawLine(x0: number, y0: number, x1: number, y1: number, color: number = 1) {
+        _savDRAW = _DRAW
         _DRAW = 0
 		
 		let kx: number, ky: number, c: number, i: number, dx: number, dy: number;
@@ -320,10 +316,30 @@ namespace OLED12864_I2C {
             }
         }
 		
-        _DRAW = 1
-        draw(1)
+        _DRAW = _savDRAW
+        draw(_DRAW)
     }
 
+    /**
+     * fill a rectangle
+     */
+    //% blockId="OLED12864_I2C_FILLEDRECT" block="fill a rectangle at x1 %x1|y1 %y1|x2 %x2|y2 %y2|color %color"
+    //% color.defl=1
+    //% weight=70 blockGap=8 inlineInputMode=inline
+    export function filledRect(x1: number, y1: number, x2: number, y2: number, color: number = 1) {
+        if (x1 > x2)
+            x1 = [x2, x2 = x1][0];
+        if (y1 > y2)
+            y1 = [y2, y2 = y1][0];
+        _savDRAW = _DRAW
+        _DRAW = 0
+	  for (let i = y1; i <= y2; i++) {
+		  hline(x1, i, x2 - x1 + 1, color)
+	  }
+        _DRAW = _savDRAW
+        draw(_DRAW)
+    }
+	
     /**
      * draw a rectangle
      */
@@ -335,13 +351,14 @@ namespace OLED12864_I2C {
             x1 = [x2, x2 = x1][0];
         if (y1 > y2)
             y1 = [y2, y2 = y1][0];
+        _savDRAW = _DRAW
         _DRAW = 0
         hline(x1, y1, x2 - x1 + 1, color)
         hline(x1, y2, x2 - x1 + 1, color)
         vline(x1, y1, y2 - y1 + 1, color)
         vline(x2, y1, y2 - y1 + 1, color)
-        _DRAW = 1
-        draw(1)
+        _DRAW = _savDRAW
+        draw(_DRAW)
     }
 
     /**
@@ -356,15 +373,46 @@ namespace OLED12864_I2C {
     }
 
     /**
-     * clear screen
+     * brightness
      */
-    //% blockId="OLED12864_I2C_CLEAR" block="Clear screen"
+    //% blockId="OLED12864_I2C_BRIGHTNESS" block="brightness %d"
+    //% d.defl=207
+    //% weight=62 blockGap=8
+    export function brightness(d: number = 207) {
+        cmd2(0x81, d)
+    }
+	
+    /**
+     * set render screen
+     * @param d true: render screen / false: don't render screen, eg: false
+     */
+    //% blockId="OLED12864_I2C_SETRENDERSCREEN" block="set render screen %d"
     //% weight=30 blockGap=8
-    export function clear() {
+    export function setRenderScreen(d: boolean = false) {
+        _DRAW = (d) ? 1 : 0
+		_savDRAW = _DRAW
+    }
+
+    /**
+     * refresh screen
+     */
+    //% blockId="OLED12864_I2C_REFRESH" block="refresh screen"
+    //% weight=30 blockGap=8
+    export function refresh() {
+        draw(1);
+    }
+
+    /**
+     * clear screen
+	 * @param d true: redraw / false: empty buffer, eg: true
+     */
+    //% blockId="OLED12864_I2C_CLEAR" block="Clear screen %d"
+    //% weight=30 blockGap=8
+    export function clear(d: boolean = true) {
         _cx = _cy = 0
         _screen.fill(0)
         _screen[0] = 0x40
-        draw(1)
+        draw((d) ? 1 : 0)
     }
 
     /**
@@ -400,15 +448,16 @@ namespace OLED12864_I2C {
   //% inlineInputMode=inline
   //% weight=62 blockGap=8
   export function outlinedCircle(x: number, y: number, r: number, color: number = 1) {
-	  _DRAW = 0
+	  _savDRAW = _DRAW
+      _DRAW = 0
       const step = 1 / r;
       for (let theta = 0; theta < 2 * Math.PI; theta += step) {
           let xPos = x + Math.round(r * Math.cos(theta));
           let yPos = y + Math.round(r * Math.sin(theta));
           pixel(xPos, yPos, color);
       }
-  	  _DRAW = 1
-	  draw(1)
+  	  _DRAW = _savDRAW
+      draw(_DRAW)
   }
   /**
    * draw a filled circle
@@ -421,7 +470,8 @@ namespace OLED12864_I2C {
   //% inlineInputMode=inline
   //% weight=62 blockGap=8
   export function filledCircle(x: number, y: number, r: number, color: number = 1) {
-	  _DRAW = 0
+	  _savDRAW = _DRAW
+      _DRAW = 0
       for (let j = 0; j <= r; j++) {
           const step = 1 / j;
           for (let theta = 0; theta < 2 * Math.PI; theta += step) {
@@ -430,9 +480,26 @@ namespace OLED12864_I2C {
               pixel(xPos, yPos, color);
           }
       }
-  	  _DRAW = 1
-	  draw(1)
+  	  _DRAW = _savDRAW
+      draw(_DRAW)
   }
+  
+    /**
+     * get pixel in OLED
+     */
+    //% blockId="OLED12864_I2C_GETPIXEL" block="get pixel at x %x|y %y|color %color"
+    //% x.max=128 x.min=0 x.defl=0
+    //% y.max=64 y.min=0 y.defl=0
+    //% color.max=1 color.min=0 color.defl=1
+    //% weight=62 blockGap=8
+    export function getPixel(x: number, y: number, color: number = 1): boolean {
+        let page = y >> 3
+        let shift_page = y % 8
+        let ind = x * (_ZOOM + 1)  + page * 128 + 1
+		let bit = (1 << shift_page)
+		let yes = (_screen[ind] & bit) == bit
+		return (color) ? yes : (!yes);
+    }
   
    /**
    * draw bytes
@@ -446,7 +513,8 @@ namespace OLED12864_I2C {
   //% inlineInputMode=inline
   //% weight=62 blockGap=8
   export function drawBytes(x: number, y: number, bytes: number[], width: number = 8, color: number = 1) {
-	  _DRAW = 0
+	  _savDRAW = _DRAW
+      _DRAW = 0
 	  let bit=0
 	  for (let i = 0; i < bytes.length; i++) {
     	  for (let j = i*8; j < (i+1)*8; j++) {
@@ -454,8 +522,8 @@ namespace OLED12864_I2C {
 			pixel(x+j%width, y+j/width, bit==1?color:color^0x1);
 	      }
 	  }
-  	  _DRAW = 1
-	  draw(1)
+  	  _DRAW = _savDRAW
+      draw(_DRAW)
   }
 
     /**
