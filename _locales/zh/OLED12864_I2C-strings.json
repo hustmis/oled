@@ -22,6 +22,9 @@
 	"OLED12864_I2C.outlinedCircle|block": "绘制圆形在 x %x|y %y|半径 %r|颜色 %color",
     "OLED12864_I2C.filledCircle|block": "绘制实心圆形在 x %x|y %y|半径 %r|颜色 %color",
 	"OLED12864_I2C.getPixel|block": "有点在 x %x|y %y|颜色 %color",
-	"OLED12864_I2C.drawBytes|block": "绘制数据在 x %x y %y|数据 %bytes|宽度 %width 颜色 %color",
+	"OLED12864_I2C.createSpirit|block": "创建角色在 x %x y %y|玩家 %isPlayer 步长 %step|数据 %bytes|宽度 %width 高度 %height 颜色 %color",
+	"OLED12864_I2C.drawSpirits|block": "绘制精灵 %spirits",
+	"OLED12864_I2C.Spirit.move|block": "移动精灵 方向 %stepX %stepY",
+	"OLED12864_I2C.collision|block": "发生碰撞 %spirits",
     "OLED12864_I2C.init|block": "初始化 %addr"
 }
