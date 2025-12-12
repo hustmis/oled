@@ -601,7 +601,7 @@ namespace OLED12864_I2C {
    */
   //% blockId="OLED12864_I2C_COLLISION" block="spirits collision %spirits"
   //% inlineInputMode=inline
-  export function collision(spirits: Spirit[], handle: () => void) {
+  export function collision(spirits: Spirit[]): boolean {
 	  let player=getPlayer(spirits);
 	  
 	  for (let i = 0; i < spirits.length; i++) {
@@ -610,10 +610,11 @@ namespace OLED12864_I2C {
 			  if(player._x < spirit._x + spirit._width-1 && player._x + player._width-1 > spirit._x && player._y < spirit._y + spirit._height-1 && player._y + player._height-1 > spirit._y) {
 				  spirit._y=0;
 				  spirit._x=Math.floor(Math.random() * (128-spirit._width));
-				  handle();
+				  return true;
 			  }
 		  }
 	  }
+	  return false;
   }
 
     /**
