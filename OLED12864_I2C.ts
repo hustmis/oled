@@ -501,29 +501,118 @@ namespace OLED12864_I2C {
 		return (color) ? yes : (!yes);
     }
   
-   /**
-   * draw bytes
-   * @param x is the x coordinate of the center, eg: 0
-   * @param y is the y coordinate of the center, eg: 0
-   * @param bytes is the pixels byte array
-   * @param width is the pixels width, eg: 8
-   * @param color is the color of the circle, eg: 1
-   */
-  //% blockId="OLED12864_I2C_DRAWBYTES" block="draw bytes at x %x y %y|bytes %bytes|width %width color %color"
-  //% inlineInputMode=inline
-  //% weight=62 blockGap=8
-  export function drawBytes(x: number, y: number, bytes: number[], width: number = 8, color: number = 1) {
+  function drawBytes(x: number, y: number, bytes: number[] = null, width: number = 4, height: number = 4, color: number = 1) {
 	  _savDRAW = _DRAW
       _DRAW = 0
+	  if(bytes!=null){
 	  let bit=0
 	  for (let i = 0; i < bytes.length; i++) {
     	  for (let j = i*8; j < (i+1)*8; j++) {
+			if(j>=width*height) continue;
 			bit=(bytes[i]>>(8-1-(j-i*8)))&0x1;
 			pixel(x+j%width, y+j/width, bit==1?color:color^0x1);
 	      }
 	  }
+	  }
+	  else{
+		  filledRect(x, y, x+width-1, y+height-1, color);
+	  }
   	  _DRAW = _savDRAW
       draw(_DRAW)
+  }
+  
+  /**
+   * draw spirits
+   */
+  //% blockId="OLED12864_I2C_DRAWSPIRITS" block="draw spirits %spirits"
+  //% inlineInputMode=inline
+  //% weight=62 blockGap=8
+  export function drawSpirits(spirits: Spirit[]) {
+	  for (let i = 0; i < spirits.length; i++) {
+		  let spirit=spirits[i];
+		  drawBytes(spirit._x,spirit._y,spirit._bytes,spirit._width,spirit._height,spirit._color);
+	  }
+  }
+  
+  /**
+   * create spirit
+   * @param x is the x coordinate of the center, eg: 0
+   * @param y is the y coordinate of the center, eg: 0
+   * @param isPlayer is the player, eg: false
+   * @param step is the pixels of one move, eg: 4
+   * @param bytes is the pixels byte array, eg: null
+   * @param width is the pixels width, eg: 4
+   * @param height is the pixels height, eg: 4
+   * @param color is the color of the circle, eg: 1
+   */
+  //% blockId="OLED12864_I2C_CREATESPIRIT" block="create spirit at x %x y %y|isPlayer %isPlayer step %step|bytes %bytes|width %width height %height color %color"
+  //% inlineInputMode=inline
+  //% weight=62 blockGap=8
+  export function createSpirit(x: number, y: number, isPlayer: boolean = false, step: number = 4, bytes: number[] = null, width: number = 4, height: number = 4, color: number = 1): Spirit {
+	  let spirit=new Spirit();
+	  spirit._x=x;
+	  spirit._y=y;
+	  spirit._isPlayer=isPlayer;
+	  spirit._step=step;
+	  spirit._bytes=bytes;
+	  spirit._width=width;
+	  spirit._height=height;
+	  spirit._color=color;
+	  spirit.move(0,0);
+	  return spirit;
+  }
+  
+  /**
+   * Spirit
+   */
+  export class Spirit {
+	  _x: number = 0;
+	  _y: number = 0;
+	  _bytes: number[] = null;
+	  _width: number = 4;
+	  _height: number = 4;
+	  _color: number = 1;
+	  _step: number = 4;
+	  _isPlayer: boolean = false;
+	  
+	  /**
+	   * move spirit
+	   * @param stepX is the x move, eg: 1
+	   * @param stepY is the y move, eg: 0
+	   */
+	  //% blockId="OLED12864_I2C_SPIRIT_MOVE" block="move step stepX %stepX stepY %stepY"
+	  //% inlineInputMode=inline
+	  move(stepX: number = 1, stepY: number = 0){
+		  _x=((128-_width)+_x+stepX*_step)%(128-_width);
+		  _y=((64-_height)+_y+stepY*_step)%(64-_height);
+	  }
+  }
+  
+  function getPlayer(spirits: Spirit[]): Spirit {
+	  for (let i = 0; i < spirits.length; i++) {
+		  let spirit=spirits[i];
+		  if(spirit._isPlayer) return spirit;
+	  }
+  }
+  
+  /**
+   * spirits collision
+   */
+  //% blockId="OLED12864_I2C_COLLISION" block="spirits collision %spirits"
+  //% inlineInputMode=inline
+  export function collision(spirits: Spirit[], handle: () => void) {
+	  let player=getPlayer(spirits);
+	  
+	  for (let i = 0; i < spirits.length; i++) {
+		  let spirit=spirits[i];
+		  if(player!=spirit) {
+			  if(player._x < spirit._x + spirit._width-1 && player._x + player._width-1 > spirit._x && player._y < spirit._y + spirit._height-1 && player._y + player._height-1 > spirit._y) {
+				  spirit._y=0;
+				  spirit._x=Math.floor(Math.random() * (128-spirit._width));
+				  handle();
+			  }
+		  }
+	  }
   }
 
     /**
