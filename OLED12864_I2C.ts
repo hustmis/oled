@@ -566,14 +566,14 @@ namespace OLED12864_I2C {
    * Spirit
    */
   export class Spirit {
-	  _x: number = 0;
-	  _y: number = 0;
-	  _bytes: number[] = null;
-	  _width: number = 4;
-	  _height: number = 4;
-	  _color: number = 1;
-	  _step: number = 4;
-	  _isPlayer: boolean = false;
+	  _x: number;
+	  _y: number;
+	  _bytes: number[];
+	  _width: number;
+	  _height: number;
+	  _color: number;
+	  _step: number;
+	  _isPlayer: boolean;
 	  
 	  /**
 	   * move spirit
