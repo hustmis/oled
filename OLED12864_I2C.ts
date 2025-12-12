@@ -592,8 +592,8 @@ namespace OLED12864_I2C {
 	  for (let i = 0; i < spirits.length; i++) {
 		  let spirit=spirits[i];
 		  if(spirit._isPlayer) return spirit;
-		  else return new Spirit();
 	  }
+	  return new Spirit();
   }
   
   /**
