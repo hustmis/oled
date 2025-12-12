@@ -583,8 +583,8 @@ namespace OLED12864_I2C {
 	  //% blockId="OLED12864_I2C_SPIRIT_MOVE" block="move step stepX %stepX stepY %stepY"
 	  //% inlineInputMode=inline
 	  move(stepX: number = 1, stepY: number = 0){
-		  _x=((128-_width)+_x+stepX*_step)%(128-_width);
-		  _y=((64-_height)+_y+stepY*_step)%(64-_height);
+		  this._x=((128-this._width)+this._x+stepX*this._step)%(128-this._width);
+		  this._y=((64-this._height)+this._y+stepY*this._step)%(64-this._height);
 	  }
   }
   
@@ -592,6 +592,7 @@ namespace OLED12864_I2C {
 	  for (let i = 0; i < spirits.length; i++) {
 		  let spirit=spirits[i];
 		  if(spirit._isPlayer) return spirit;
+		  else return new Spirit();
 	  }
   }
   
