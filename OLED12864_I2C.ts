@@ -501,10 +501,10 @@ namespace OLED12864_I2C {
 		return (color) ? yes : (!yes);
     }
   
-  function drawBytes(x: number, y: number, bytes: number[] = null, width: number = 4, height: number = 4, color: number = 1) {
+  function drawBytes(x: number, y: number, bytes: number[] = [], width: number = 4, height: number = 4, color: number = 1) {
 	  _savDRAW = _DRAW
       _DRAW = 0
-	  if(bytes!=null){
+	  if(bytes!=null&&bytes.length>0){
 	  let bit=0
 	  for (let i = 0; i < bytes.length; i++) {
     	  for (let j = i*8; j < (i+1)*8; j++) {
@@ -548,7 +548,7 @@ namespace OLED12864_I2C {
   //% blockId="OLED12864_I2C_CREATESPIRIT" block="create spirit at x %x y %y|isPlayer %isPlayer step %step|bytes %bytes|width %width height %height color %color"
   //% inlineInputMode=inline
   //% weight=62 blockGap=8
-  export function createSpirit(x: number, y: number, isPlayer: boolean = false, step: number = 4, bytes: number[] = null, width: number = 4, height: number = 4, color: number = 1): Spirit {
+  export function createSpirit(x: number, y: number, isPlayer: boolean = false, step: number = 4, bytes: number[] = [], width: number = 4, height: number = 4, color: number = 1): Spirit {
 	  let spirit=new Spirit();
 	  spirit._x=x;
 	  spirit._y=y;
