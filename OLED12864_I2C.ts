@@ -580,7 +580,7 @@ namespace OLED12864_I2C {
 	   * @param stepX is the x move, eg: 1
 	   * @param stepY is the y move, eg: 0
 	   */
-	  //% blockId="OLED12864_I2C_SPIRIT_MOVE" block="move step stepX %stepX stepY %stepY"
+	  //% blockId="OLED12864_I2C_SPIRIT_MOVE" block="%spirit|move step stepX %stepX stepY %stepY"
 	  //% inlineInputMode=inline
 	  move(stepX: number = 1, stepY: number = 0){
 		  this._x=((128-this._width)+this._x+stepX*this._step)%(128-this._width);
